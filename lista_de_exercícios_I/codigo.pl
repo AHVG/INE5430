@@ -21,8 +21,7 @@ tratamento(aneurisma, [cirurgia, estatinas, betabloqueadores]).
 % Regras: identificação de doença por sintomas
 diagnostico(SintomasPaciente, Doenca) :-
     doenca(Doenca, SintomasDoenca),
-    member(S, SintomasPaciente),
-    member(S, SintomasDoenca).
+    subset(SintomasPaciente, SintomasDoenca).
 
 % Sugere o tratamento para a doença identificada
 sugerir_tratamento(Sintomas, Tratamento) :-
