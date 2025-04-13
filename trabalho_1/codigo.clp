@@ -211,53 +211,53 @@
 
 ; Regras de Diagnóstico
 (defrule DiagnosticoInfarto
-	(and (Sintoma(Dor_no_Peito yes)) (Sintoma(Dor_no_Braco_Esquerdo yes)) (Sintoma(Falta_de_Ar yes)) 
+	(or (Sintoma(Dor_no_Peito yes)) (Sintoma(Dor_no_Braco_Esquerdo yes)) (Sintoma(Falta_de_Ar yes)) 
 	(Sintoma(Suor_Frio yes)) (Sintoma(Nausea yes)) (Sintoma(Desmaio yes)))
 	=>
 	(assert (Doenca(doenca infarto)))
 	(printout t crlf "Possível doença: Infarto do Miocárdio" crlf))
 
 (defrule DiagnosticoInsuficienciaCardiaca
-	(and (Sintoma(Falta_de_Ar_ao_Deitar yes)) (Sintoma(Fadiga yes)) (Sintoma(Inchaço yes)) 
+	(or (Sintoma(Falta_de_Ar_ao_Deitar yes)) (Sintoma(Fadiga yes)) (Sintoma(Inchaço yes)) 
 	(Sintoma(Ganho_de_Peso yes)) (Sintoma(Tosse_Noturna yes)))
 	=>
 	(assert (Doenca(doenca insuficiencia_cardiaca)))
 	(printout t crlf "Possível doença: Insuficiência Cardíaca" crlf))
 
 (defrule DiagnosticoArritmia
-	(and (Sintoma(Palpitacoes yes)) (Sintoma(Tontura yes)) (Sintoma(Falta_de_Ar yes)) (Sintoma(Ansiedade_Subita yes)))
+	(or (Sintoma(Palpitacoes yes)) (Sintoma(Tontura yes)) (Sintoma(Falta_de_Ar yes)) (Sintoma(Ansiedade_Subita yes)))
 	=>
 	(assert (Doenca(doenca arritmia)))
 	(printout t crlf "Possível doença: Arritmia Cardíaca" crlf))
 
 (defrule DiagnosticoDAP
-	(and (Sintoma(Claudicacao yes)) (Sintoma(Feridas_Que_Nao_Cicatrizam yes)) (Sintoma(Pele_Fria_ou_Palida yes)))
+	(or (Sintoma(Claudicacao yes)) (Sintoma(Feridas_Que_Nao_Cicatrizam yes)) (Sintoma(Pele_Fria_ou_Palida yes)))
 	=>
 	(assert (Doenca(doenca dap)))
 	(printout t crlf "Possível doença: Doença Arterial Periférica (DAP)" crlf))
 
 (defrule DiagnosticoValvopatia
-	(and (Sintoma(Fadiga yes)) (Sintoma(Tontura yes)) (Sintoma(Desmaio yes)) 
+	(or (Sintoma(Fadiga yes)) (Sintoma(Tontura yes)) (Sintoma(Desmaio yes)) 
 	(Sintoma(Barulho_no_Coracao yes)) (Sintoma(Dor_no_Peito yes)) (Sintoma(Inchaço yes)))
 	=>
 	(assert (Doenca(doenca valvopatia)))
 	(printout t crlf "Possível doença: Valvopatia" crlf))
 
 (defrule DiagnosticoHipertensao
-	(and (Sintoma(Sangramento_Nasal yes)) (Sintoma(Visao_Embacada yes)) 
+	(or (Sintoma(Sangramento_Nasal yes)) (Sintoma(Visao_Embacada yes)) 
 	(Sintoma(Dor_de_Cabeca yes)) (Sintoma(Zumbido yes)) (Sintoma(Tontura yes)))
 	=>
 	(assert (Doenca(doenca hipertensao)))
 	(printout t crlf "Possível doença: Hipertensão Arterial" crlf))
 
 (defrule DiagnosticoAterosclerose
-	(and (Sintoma(Dormencia_Formigamento yes)) (Sintoma(Claudicacao yes)) (Sintoma(Dor_no_Peito yes)))
+	(or (Sintoma(Dormencia_Formigamento yes)) (Sintoma(Claudicacao yes)) (Sintoma(Dor_no_Peito yes)))
 	=>
 	(assert (Doenca(doenca aterosclerose)))
 	(printout t crlf "Possível doença: Aterosclerose" crlf))
 
 (defrule DiagnosticoAneurisma
-	(and (Sintoma(Pulsacao_Abdominal yes)) (Sintoma(Nausea yes)) 
+	(or (Sintoma(Pulsacao_Abdominal yes)) (Sintoma(Nausea yes)) 
 	(Sintoma(Sinais_de_Choque yes)) (Sintoma(Dor_Subita_Intensa yes)))
 	=>
 	(assert (Doenca(doenca aneurisma)))
