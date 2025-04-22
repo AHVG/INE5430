@@ -1,72 +1,58 @@
-import random
-import matplotlib.pyplot as plt
-
-TAMANHO_POP = 10000
-GERACOES = 500
-TAXA_MUTACAO = 0.1
-NUM_GENES = 8
-META_FITNESS = 28
+import pygad
 
 
-def fitness(individuo):
-    conflitos = 0
-    for i in range(len(individuo)):
-        for j in range(i + 1, len(individuo)):
-            if individuo[i] == individuo[j] or abs(individuo[i] - individuo[j]) == abs(i - j):
-                conflitos += 1
-    return META_FITNESS - conflitos
+# Problema das 8 rainhas
+N = 8
+# Cálculo do número máximo de pares de rainhas que não se atacam
+MAX_NON_ATTACKING_PAIRS = (N * (N - 1)) // 2
 
-def gerar_individuo():
-    return [random.randint(0, 7) for _ in range(NUM_GENES)]
+# Função de fitness: conta quantos pares de rainhas NÃO se atacam
+def fitness_func(ga_instance, solution, solution_idx):
+    non_attacking = MAX_NON_ATTACKING_PAIRS
+    for i in range(N):
+        for j in range(i + 1, N):
+            same_row = solution[i] == solution[j]
+            same_diag = abs(solution[i] - solution[j]) == abs(i - j)
+            if same_row or same_diag:
+                non_attacking -= 1
+    return non_attacking
 
-def crossover(pai1, pai2):
-    ponto = random.randint(1, NUM_GENES - 2)
-    return pai1[:ponto] + pai2[ponto:]
+# Espaço dos genes: cada gene representa uma linha da rainha em cada coluna
+gene_space = list(range(N))
 
-def mutacao(individuo):
-    novo = individuo[:]
-    if random.random() < TAXA_MUTACAO:
-        col = random.randint(0, NUM_GENES - 1)
-        novo[col] = random.randint(0, 7)
-    return novo
+# Criação da instância do algoritmo genético
+ga_instance = pygad.GA(
+    num_generations=2000,
+    num_parents_mating=N * 2,
+    fitness_func=fitness_func,
+    sol_per_pop=100,
+    num_genes=N,
+    gene_space=gene_space,
+    parent_selection_type="tournament",
+    crossover_type="single_point",
+    mutation_type="random",
+    mutation_percent_genes=20,
+    stop_criteria=[f"reach_{MAX_NON_ATTACKING_PAIRS}"]
+)
 
-populacao = [gerar_individuo() for _ in range(TAMANHO_POP)]
-melhor_fitness_geracao = []
+# Executa o algoritmo genético
+ga_instance.run()
 
-for geracao in range(GERACOES):
-    fitnesses = [fitness(ind) for ind in populacao]
+# Plota a evolução da fitness
+ga_instance.plot_fitness()
 
-    if max(fitnesses) == META_FITNESS:
-        melhor_fitness_geracao.append(max(fitnesses))
-        break
+# Mostra a melhor solução encontrada
+solution, solution_fitness, _ = ga_instance.best_solution()
+print(f"\nMelhor solução encontrada (N={N}):", solution)
+print("Fitness da melhor solução:", solution_fitness)
 
-    # Seleciona a elite (top 50%)
-    combinados = list(zip(populacao, fitnesses))
-    combinados.sort(key=lambda x: x[1], reverse=True)
-    elite = [ind for ind, _ in combinados[:TAMANHO_POP // 2]]
+# Imprime o tabuleiro com a solução
+def print_board(solution):
+    board = [['.' for _ in range(N)] for _ in range(N)]
+    for col, row in enumerate(solution):
+        board[int(row)][col] = 'Q'
+    print("\nTabuleiro:")
+    for row in board:
+        print(' '.join(row))
 
-    # Gera filhos a partir apenas da elite
-    filhos = []
-    while len(filhos) < TAMANHO_POP // 2:
-        pai1 = random.choice(elite)
-        pai2 = random.choice(elite)
-        filho = crossover(pai1, pai2)
-        filho = mutacao(filho)
-        filhos.append(filho)
-
-    populacao = elite + filhos
-    melhor_fitness_geracao.append(max(fitnesses))
-
-# Plot da convergência
-plt.plot(melhor_fitness_geracao)
-plt.title("Convergência do Algoritmo Genético")
-plt.xlabel("Geração")
-plt.ylabel("Melhor Fitness")
-plt.grid(True)
-plt.savefig("convergencia.png")
-
-# Resultado final
-melhor_indice = fitnesses.index(max(fitnesses))
-print("Melhor solução encontrada:", populacao[melhor_indice])
-print("Fitness:", fitnesses[melhor_indice])
-print("Geração:", len(melhor_fitness_geracao))
+print_board(solution)
