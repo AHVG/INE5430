@@ -1,20 +1,39 @@
 import numpy as np
 import h5py
 import matplotlib.pyplot as plt
-# import tensorflow as tf
+
 from sklearn.metrics import confusion_matrix, classification_report, ConfusionMatrixDisplay
-# from sklearn.model_selection import train_test_split
 from tensorflow.keras import layers, models
+
+
+# --- Constantes para Regressão Logística ---
+LOGISTIC_REGRESSION_LOSS_FUNCTION = 'binary_crossentropy'
+LOGISTIC_REGRESSION_METRICS = ['accuracy']
+LOGISTIC_REGRESSION_EPOCHS = 100
+LOGISTIC_REGRESSION_BATCH_SIZE = 32
+LOGISTIC_REGRESSION_VERBOSE_MODE = 0
+LOGISTIC_REGRESSION_OPTIMIZER = 'adam'
+
+# --- Constantes para Rede Neural Rasa ---
+SHALLOW_NN_LOSS_FUNCTION = 'binary_crossentropy'
+SHALLOW_NN_METRICS = ['accuracy']
+SHALLOW_NN_EPOCHS = 100
+SHALLOW_NN_BATCH_SIZE = 32
+SHALLOW_NN_VERBOSE_MODE = 0
+SHALLOW_NN_OPTIMIZER = 'adam'
+
+# --- Constantes para Rede Convolucional (CNN) ---
+CNN_LOSS_FUNCTION = 'binary_crossentropy'
+CNN_METRICS = ['accuracy']
+CNN_EPOCHS = 10
+CNN_BATCH_SIZE = 32
+CNN_VERBOSE_MODE = 0
+CNN_OPTIMIZER = 'adam'
 
 
 # Função para carregar os dados
 def load_dataset():
     with h5py.File('train_catvnoncat.h5', 'r') as train_dataset:
-        for i in range(10):
-            img = train_dataset["train_set_x"][i]
-            plt.imshow(img)
-            plt.title("Exemplo de imagem")
-            plt.show()
         train_set_x = np.array(train_dataset["train_set_x"][:])  # imagens
         train_set_y = np.array(train_dataset["train_set_y"][:])  # labels
 
@@ -42,7 +61,7 @@ def logistic_regression_model(input_shape):
         layers.Input(shape=input_shape),
         layers.Dense(1, activation='sigmoid')
     ])
-    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer=LOGISTIC_REGRESSION_OPTIMIZER, loss=LOGISTIC_REGRESSION_LOSS_FUNCTION, metrics=LOGISTIC_REGRESSION_METRICS)
     return model
 
 # Rede Neural Rasa
@@ -52,7 +71,7 @@ def shallow_neural_net(input_shape):
         layers.Dense(16, activation='relu'),
         layers.Dense(1, activation='sigmoid')
     ])
-    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer=SHALLOW_NN_OPTIMIZER, loss=SHALLOW_NN_LOSS_FUNCTION, metrics=SHALLOW_NN_METRICS)
     return model
 
 # Rede Convolucional (opcional)
@@ -67,7 +86,7 @@ def cnn_model():
         layers.Dense(64, activation='relu'),
         layers.Dense(1, activation='sigmoid')
     ])
-    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer=CNN_OPTIMIZER, loss=CNN_LOSS_FUNCTION, metrics=CNN_METRICS)
     return model
 
 # Avaliação
@@ -85,6 +104,7 @@ def evaluate_model(model, X_test, y_test):
         cmap=plt.cm.Blues
     )
     plt.title("Matriz de Confusão")
+    plt.show()
 
 # Execução principal
 def main():
@@ -94,17 +114,16 @@ def main():
     print("\n--- Regressão Logística ---")
     X_train_flat = preprocess_flatten(X_train)
     X_test_flat = preprocess_flatten(X_test)
-    print(X_train_flat)
     model_log = logistic_regression_model(X_train_flat.shape[1:])
     model_log.summary()
-    model_log.fit(X_train_flat, y_train, epochs=100, batch_size=32, verbose=0)
+    model_log.fit(X_train_flat, y_train, epochs=LOGISTIC_REGRESSION_EPOCHS, batch_size=LOGISTIC_REGRESSION_BATCH_SIZE, verbose=LOGISTIC_REGRESSION_VERBOSE_MODE)
     evaluate_model(model_log, X_test_flat, y_test)
 
     # Rede Rasa
     print("\n--- Rede Neural Rasa ---")
     model_rasa = shallow_neural_net(X_train_flat.shape[1:])
     model_rasa.summary()
-    model_rasa.fit(X_train_flat, y_train, epochs=100, batch_size=32, verbose=0)
+    model_rasa.fit(X_train_flat, y_train, epochs=SHALLOW_NN_EPOCHS, batch_size=SHALLOW_NN_BATCH_SIZE, verbose=SHALLOW_NN_VERBOSE_MODE)
     evaluate_model(model_rasa, X_test_flat, y_test)
 
     # CNN (opcional)
@@ -113,10 +132,9 @@ def main():
     X_test_cnn = preprocess_cnn(X_test)
     model_cnn = cnn_model()
     model_cnn.summary()
-    model_cnn.fit(X_train_cnn, y_train, epochs=10, batch_size=32, verbose=0)
+    model_cnn.fit(X_train_cnn, y_train, epochs=CNN_EPOCHS, batch_size=CNN_BATCH_SIZE, verbose=CNN_VERBOSE_MODE)
     evaluate_model(model_cnn, X_test_cnn, y_test)
 
-    plt.show()
 
 if __name__ == "__main__":
     main()
