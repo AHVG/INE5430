@@ -2,6 +2,7 @@ import numpy as np
 import h5py
 import matplotlib.pyplot as plt
 import tensorflow as tf
+import os
 
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import classification_report, ConfusionMatrixDisplay
@@ -20,7 +21,7 @@ PERCEPTRON_CONFIG = {
     'metrics': ['accuracy'],
     'epochs': 100,
     'batch_size': int(number_of_training_cases / 10),
-    'verbose': 1,
+    'verbose': 0,
     'optimizer': 'adam',
     'model_layers': [
         layers.Input(shape=(12288,)),
@@ -35,7 +36,7 @@ SHALLOW_NN_CONFIG = {
     'metrics': ['accuracy'],
     'epochs': 100,
     'batch_size': int(number_of_training_cases / 5),
-    'verbose': 1,
+    'verbose': 0,
     'optimizer': tf.keras.optimizers.Adam(learning_rate=0.0001),
     'model_layers': [
         layers.Input(shape=(12288,)),
@@ -51,7 +52,7 @@ CNN_CONFIG = {
     'metrics': ['accuracy'],
     'epochs': 50,
     'batch_size': int(number_of_training_cases / 5),
-    'verbose': 1,
+    'verbose': 0,
     'optimizer': 'adam',
     'model_layers': [
         layers.Input(shape=(64, 64, 3)),
@@ -187,6 +188,18 @@ class BaseModelTrainer:
             cmap=plt.cm.Blues
         )
         plt.title(f"Matriz de Confusão para {self.name}")
+
+        # Cria um nome de arquivo seguro usando o nome do modelo
+        file_name = f"confusion_matrix_{self.name.replace(' ', '_').replace('(', '').replace(')', '')}.png"
+        
+        # Opcional: Criar um diretório para salvar as imagens se ele não existir
+        output_dir = "confusion_matrices"
+        os.makedirs(output_dir, exist_ok=True) # Cria o diretório se não existir
+        save_path = os.path.join(output_dir, file_name)
+
+        plt.savefig(save_path) # Salva a figura antes de mostrar
+        print(f"Matriz de confusão salva em: {save_path}")
+        
         plt.show()
 
         print("\nRelatório de Classificação:")
