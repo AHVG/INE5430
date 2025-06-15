@@ -1,5 +1,6 @@
 #import dependencies
 import os
+import time # Importar o módulo time
 
 import torch
 import torchvision
@@ -26,9 +27,12 @@ latent_dim = 100
 torch.manual_seed(seed)
 np.random.seed(seed)
 
-# Define output directory for generated images
-OUTPUT_DIR = 'generated_gan_images'
-os.makedirs(OUTPUT_DIR, exist_ok=True) # Create the directory if it doesn't exist
+# Define output directories
+OUTPUT_DIR_IMAGES = 'generated_gan_images'
+OUTPUT_DIR_LOSS_PLOTS = 'gan_loss_plots' # Este diretório agora conterá o gráfico de perda ao longo das épocas
+
+os.makedirs(OUTPUT_DIR_IMAGES, exist_ok=True) # Create the directory for images
+os.makedirs(OUTPUT_DIR_LOSS_PLOTS, exist_ok=True) # Create the directory for loss plots
 
 # Create a custom dataset for MNIST
 transform = transforms.Compose([
@@ -87,7 +91,6 @@ def save_generated_images(generator_model, epoch, latent_dim, output_dir, num_sa
     Generates sample images from the generator and saves them to a specified directory.
     """
     # Create a fixed noise vector for consistent evaluation of generator's progress
-    # We use a global fixed_noise here so the same noise input generates images over epochs
     if not hasattr(save_generated_images, 'fixed_noise'):
         save_generated_images.fixed_noise = torch.randn(num_samples, latent_dim, 1, 1)
 
@@ -112,6 +115,26 @@ def save_generated_images(generator_model, epoch, latent_dim, output_dir, num_sa
         plt.savefig(filename)
         plt.close() # Close the plot to free up memory
 
+# Function to save loss plots across epochs
+def save_loss_plot_across_epochs(epoch, all_d_losses, all_g_losses, output_dir):
+    """
+    Plots and saves the discriminator and generator losses across all epochs.
+    """
+    plt.figure(figsize=(10, 5))
+    plt.plot(all_d_losses, label='Discriminator Loss')
+    plt.plot(all_g_losses, label='Generator Loss')
+    plt.title(f'GAN Loss Across Epochs')
+    plt.xlabel('Epoch')
+    plt.ylabel('Average Loss')
+    plt.legend()
+    plt.grid(True)
+    
+    # Always save with a fixed name as it's updated each epoch
+    filename = os.path.join(output_dir, f'gan_loss_epoch_{epoch+1:04d}.png')
+    plt.savefig(filename)
+    plt.close() # Close the plot to free up memory
+
+
 # Initialize the generator and discriminator
 generator = Generator()
 discriminator = Discriminator()
@@ -121,8 +144,20 @@ criterion = nn.BCELoss()
 optimizer_g = torch.optim.Adam(generator.parameters(), lr=learning_rate)
 optimizer_d = torch.optim.Adam(discriminator.parameters(), lr=learning_rate)
 
+# Lists to store average losses per epoch for plotting across epochs
+all_d_losses = []
+all_g_losses = []
+
 # Training loop
+start_training_time = time.time() # Tempo de início total do treinamento
+
 for epoch in range(num_epochs):
+    epoch_start_time = time.time() # Tempo de início da época atual
+
+    # Lists to store losses for current epoch (for calculating average)
+    current_epoch_d_batch_losses = []
+    current_epoch_g_batch_losses = []
+
     for i, (real_images, _) in enumerate(data_loader):
         real_images = real_images
         batch_size = real_images.size(0)
@@ -143,6 +178,10 @@ for epoch in range(num_epochs):
         loss_fake.backward()
         optimizer_d.step()
 
+        # Calculate total discriminator loss for current batch and store
+        loss_d = loss_real.item() + loss_fake.item()
+        current_epoch_d_batch_losses.append(loss_d)
+
         # Train generator
         optimizer_g.zero_grad()
         output = discriminator(fake_images).view(-1, 1)
@@ -150,22 +189,46 @@ for epoch in range(num_epochs):
         loss_g.backward()
         optimizer_g.step()
 
+        # Store generator loss for current batch
+        current_epoch_g_batch_losses.append(loss_g.item())
+
         if (i + 1) % 100 == 0:
             print(f'Epoch [{epoch+1}/{num_epochs}], Batch [{i+1}/{len(data_loader)}], '
                   f'D_real: {output_real.mean():.4f}, D_fake: {output_fake.mean():.4f}, '
-                  f'Loss_D: {loss_real.item() + loss_fake.item():.4f}, Loss_G: {loss_g.item():.4f}')
-            # Generate and save sample images at the end of each epoch
+                  f'Loss_D: {loss_d:.4f}, Loss_G: {loss_g.item():.4f}')
     
-    # with torch.no_grad():
-    #     fake_samples = generator(torch.randn(64, latent_dim, 1, 1))
-    #     fake_samples = fake_samples.cpu()
-    #     fake_grid = torchvision.utils.make_grid(fake_samples, padding=2, normalize=True)
-    #     plt.imshow(np.transpose(fake_grid, (1, 2, 0)))
-    #     plt.axis('off')
-    #     plt.show()
+    # Calculate average loss for the current epoch
+    avg_d_loss_epoch = np.mean(current_epoch_d_batch_losses)
+    avg_g_loss_epoch = np.mean(current_epoch_g_batch_losses)
+    
+    all_d_losses.append(avg_d_loss_epoch)
+    all_g_losses.append(avg_g_loss_epoch)
 
     # Save generated images at the end of each epoch
-    save_generated_images(generator, epoch, latent_dim, OUTPUT_DIR)
+    save_generated_images(generator, epoch, latent_dim, OUTPUT_DIR_IMAGES)
+
+    # Save loss plot across epochs (updated after each epoch)
+    save_loss_plot_across_epochs(epoch, all_d_losses, all_g_losses, OUTPUT_DIR_LOSS_PLOTS)
+
+    # Time estimation
+    epoch_end_time = time.time()
+    epoch_duration = epoch_end_time - epoch_start_time
+    
+    print(f'Epoch {epoch+1} finished in {epoch_duration:.2f} seconds.')
+    
+    # Estimate remaining time
+    if epoch == 0:
+        avg_epoch_duration = epoch_duration
+    else:
+        avg_epoch_duration = (epoch_end_time - start_training_time) / (epoch + 1)
+    
+    remaining_epochs = num_epochs - (epoch + 1)
+    estimated_remaining_time = remaining_epochs * avg_epoch_duration
+
+    print(f'Average epoch duration: {avg_epoch_duration:.2f} seconds.')
+    print(f'Estimated time remaining: {estimated_remaining_time / 60:.2f} minutes ({estimated_remaining_time:.2f} seconds).\n')
+
 
 # Save the trained generator model
 torch.save(generator.state_dict(), 'generator.pth')
+print("Training complete. Generator model saved to 'generator.pth'.")
